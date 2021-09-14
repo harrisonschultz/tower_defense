@@ -3,3 +3,7 @@ node_modules/
 .elasticbeanstalk/*
 !.elasticbeanstalk/*.cfg.yml
 !.elasticbeanstalk/*.global.yml
+.git/
+client/
+server/
+types.ts
