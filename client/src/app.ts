@@ -1,22 +1,27 @@
 import Phaser from "phaser";
 import io from "socket.io-client";
 import { ScenarioScene } from './scenes/scenario'
+import { LobbyScene } from './scenes/lobby'
+import { globals } from "./globals";
+import { BombTower } from "./towers/bomb";
+import { Tower } from "./towers/tower";
 
 const config: Phaser.Types.Core.GameConfig = {
    type: Phaser.AUTO,
-   width: 640,
-   height: 512,
+   width: 1080,
+   height: 810,
    physics: {
       default: "arcade",
-      arcade: {
-         gravity: { y: 200 },
-      },
    },
-   scene: [ScenarioScene],
+   scene: [LobbyScene, ScenarioScene],
 };
 
 
-var game = new Phaser.Game(config);
+globals.socket = io();
 
 
-(this as any).socket = io();
+globals.socket.on('connect', () => {
+   globals.game = new Phaser.Game(config);
+})
+
+

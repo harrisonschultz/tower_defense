@@ -1,11 +1,11 @@
 import Phaser from "phaser";
-import { ENEMY_SPEED } from "../../../server/src/globals";
-
-// Extends: Phaser.GameObjects.Image
 
 export class Enemy extends Phaser.GameObjects.Sprite {
+  maxHp: number
+  hp: number
   follower: { t: number; vector: Phaser.Math.Vector2 };
   path: Phaser.Curves.Path;
+
   constructor(
     scene: Phaser.Scene,
     path: Phaser.Curves.Path,
@@ -14,20 +14,16 @@ export class Enemy extends Phaser.GameObjects.Sprite {
     texture: string | Phaser.Textures.Texture,
     frame?: string | number
   ) {
-    super(scene, x, y, texture, frame);
+    super(scene, x, y, 'enemy', frame);
     this.path = path;
     this.follower = { t: 0, vector: new Phaser.Math.Vector2() };
+    this.hp = 100
+    this.maxHp = 100
   }
-
-  create = () => {};
-
-  public initialize = (scene: Phaser.Scene) => {
-    Phaser.GameObjects.Sprite.call(this, scene, 0, 0, "sprites", "enemy");
-  };
 
   update = (time: number, delta: number) => {
     // move the t point along the path, 0 is the start and 0 is the end
-    this.follower.t += ENEMY_SPEED * delta;
+    this.follower.t += 1/10000 * delta;
 
     // get the new x and y coordinates in vec
     this.path.getPoint(this.follower.t, this.follower.vector);
@@ -41,7 +37,12 @@ export class Enemy extends Phaser.GameObjects.Sprite {
     }
   };
 
+  refresh = () => {
+    this.hp = this.maxHp
+  }
+
   startOnPath = (path: Phaser.Curves.Path) => {
+    this.refresh()
     if (!this.path) {
       this.path = path;
     }
@@ -54,4 +55,14 @@ export class Enemy extends Phaser.GameObjects.Sprite {
     // set the x and y of our enemy to the received from the previous step
     this.setPosition(this.follower.vector.x, this.follower.vector.y);
   };
+
+  receiveDamage = (damage: number) => {
+    this.hp -= damage;           
+    
+    // if hp drops below 0 we deactivate this enemy
+    if(this.hp <= 0) {
+        this.setActive(false);
+        this.setVisible(false);      
+    }
+}
 }

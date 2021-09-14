@@ -4,6 +4,7 @@
   "description": "",
   "main": "server.js",
   "scripts": {
+    "start": "nodemon --config \"./server/util/nodemon.json\"/",
     "test": "echo \"Error: no test specified\" && exit 1",
     "dev": "nodemon --config \"./server/util/nodemon.json\"/",
     "build:client": "npx webpack build --config ./client/util/webpack.config.js"
@@ -30,6 +31,7 @@
     "webpack-remove-debug": "^0.1.0"
   },
   "dependencies": {
+    "copy-webpack-plugin": "^9.0.1",
     "express": "^4.17.1",
     "phaser": "^3.55.2",
     "socket.io": "^4.2.0"

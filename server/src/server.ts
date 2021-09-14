@@ -2,13 +2,13 @@ import express = require("express");
 import { Server, Socket } from "socket.io";
 import { createServer } from "http";
 import { players } from "./globals";
-import { Player } from "./classes/player";
+import { Player } from "./player";
 
 const app = express();
 const server = createServer(app);
 
 app.use(express.static(__dirname + "/public"));
-console.log(__dirname + "/public");
+
 app.get("/", function (req, res) {
   res.sendFile(__dirname + "/../public/index.html");
 });
@@ -24,6 +24,10 @@ io.on("connection", (socket: Socket) => {
 
   // update all other players of the new player
   socket.broadcast.emit("newPlayer", players[socket.id]);
+
+  socket.onAny((msg, data) => {
+    socket.broadcast.emit(msg, data);
+  })
 
   socket.on("disconnect", function () {
     console.log("user disconnected");
