@@ -4,10 +4,12 @@
   "description": "",
   "main": "server.js",
   "scripts": {
-    "start": "nodemon --config \"./server/util/nodemon.json\"/",
+    "start": "node ./build/server.js",
     "test": "echo \"Error: no test specified\" && exit 1",
     "dev": "nodemon --config \"./server/util/nodemon.json\"/",
-    "build:client": "npx webpack build --config ./client/util/webpack.config.js"
+    "build:client": "npx webpack build --config ./client/util/webpack.config.js",
+    "build:server": "tsc",
+    "build": "npm run build:client && npm run build:server && cp -r ./server/src/public ./build"
   },
   "author": "",
   "license": "ISC",
