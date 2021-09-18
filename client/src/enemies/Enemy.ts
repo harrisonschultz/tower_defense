@@ -1,4 +1,5 @@
 import Phaser from "phaser";
+import { globals } from "../globals";
 
 export class Enemy extends Phaser.GameObjects.Sprite {
   maxHp: number
@@ -61,6 +62,7 @@ export class Enemy extends Phaser.GameObjects.Sprite {
     
     // if hp drops below 0 we deactivate this enemy
     if(this.hp <= 0) {
+        globals.gold += 1;
         this.setActive(false);
         this.setVisible(false);      
     }

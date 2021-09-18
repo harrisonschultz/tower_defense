@@ -10,10 +10,18 @@ class Globals {
   map: Array<Array<number>> | undefined;
   socket: Socket<DefaultEventsMap, DefaultEventsMap> | undefined
   game: Phaser.Game | undefined
+  gold: number
+  lives: number
+  MAP_HEIGHT: number
+  MAP_WIDTH: number
   TILE_SIZE: number
 
   constructor() {
+    this.gold = 100;
+    this.lives = 10;
     this.TILE_SIZE = 64
+    this.MAP_HEIGHT = 668;
+    this.MAP_WIDTH = 924;
   }
 }
 

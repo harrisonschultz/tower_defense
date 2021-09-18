@@ -8,8 +8,12 @@ import { Tower } from "./towers/tower";
 
 const config: Phaser.Types.Core.GameConfig = {
    type: Phaser.AUTO,
-   width: 1080,
-   height: 810,
+   width: 1024,
+   height: 768,
+   scale: {
+      mode: Phaser.Scale.FIT,
+      autoCenter: Phaser.Scale.CENTER_BOTH
+   },
    physics: {
       default: "arcade",
    },

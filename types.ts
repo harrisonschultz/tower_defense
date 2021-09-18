@@ -2,6 +2,7 @@ export type TowerDefinition = {
    name: string,
    attackSpeed: number,
    range: number,
+   cost: number,
    projectile: ProjectileDefinition
 }
 

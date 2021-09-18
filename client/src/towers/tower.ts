@@ -12,12 +12,14 @@ export class Tower extends Phaser.GameObjects.Sprite {
   lastFired: number
   attackSpeed: number
   range: number
+  cost: number
   projectile: ProjectileDefinition
 
   constructor(stats: TowerDefinition, scene: Phaser.Scene, x: number, y: number, texture: string | Phaser.Textures.Texture, frame?: string | number | undefined) {
     super(scene, x, y, texture, frame)
     this.name = stats.name;
     this.lastFired = 0;
+    this.cost = stats.cost;
     this.attackSpeed = stats.attackSpeed;
     this.range = stats.range
     this.readyToFire = true;
@@ -32,6 +34,10 @@ export class Tower extends Phaser.GameObjects.Sprite {
   initialize = (scene: Phaser.Scene) => {
     Phaser.GameObjects.Image.call(this, scene, 0, 0, "sprites", "turret");
   };
+
+  payForTower = () => {
+    globals.gold -= this.cost
+  }
 
   place = (i: number, j: number) => {
     this.y = j

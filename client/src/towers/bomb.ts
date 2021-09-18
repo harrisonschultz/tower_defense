@@ -5,6 +5,7 @@ const stats: TowerDefinition = {
    name: 'bomb',
    attackSpeed: 1000,
    range: 100,
+   cost: 20,
    projectile: {
      speed:  Phaser.Math.GetSpeed(600, 1),
       damage: 0,

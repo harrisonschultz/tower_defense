@@ -18,10 +18,15 @@ export class ScenarioScene extends Phaser.Scene {
   public buildMenu: Phaser.GameObjects.Graphics | undefined;
   public lives: number;
   public path: Phaser.Curves.Path | undefined;
+  private livesUI: Phaser.GameObjects.Text | undefined;
+  private goldUI: Phaser.GameObjects.Text | undefined;
   private buildMenuVisible: boolean
   private nextEnemy: number;
   private buildMenuX: number;
   private buildMenuY: number;
+  private roundStarted: boolean
+  private roundsDefinition: any;
+  private currentRound: number;
 
   constructor() {
     super(sceneConfig);
@@ -31,6 +36,9 @@ export class ScenarioScene extends Phaser.Scene {
     this.buildMenuVisible = false
     this.buildMenuX = -100
     this.buildMenuY = -100
+    this.roundStarted = false;
+    this.currentRound = 0;
+    this.roundsDefinition = [{ spawnRate: 1, basic: 10 }, { spawnRate: 2, basic: 20 }]
   }
 
   public preload() {
@@ -52,6 +60,9 @@ export class ScenarioScene extends Phaser.Scene {
   public findAndAddTower(scene: Phaser.Scene, name: string, x: number, y: number, send?: boolean) {
     const tower = Towers.createTower(scene, name, x, y)
     if (tower) {
+      if (send && tower.cost <= globals.gold) {
+        tower.payForTower()
+      }
       this.addTowerToWorld(tower, x, y)
     }
 
@@ -65,13 +76,20 @@ export class ScenarioScene extends Phaser.Scene {
       globals.towers.add(tower, true)
       tower.setActive(true);
       tower.setVisible(true);
-      console.log(x, y)
-      console.log(World.getMapCoordinate(x), World.getMapCoordinate(y))
       tower.place(x, y);
       if (globals.map) {
         globals.map[World.getMapCoordinate(y)][World.getMapCoordinate(x)] = 1;
       }
     }
+  }
+
+  private startRound() {
+    this.roundStarted = true;
+  }
+
+  private endRound() {
+    this.roundStarted = false;
+    this.currentRound++;
   }
 
   public create() {
@@ -104,8 +122,12 @@ export class ScenarioScene extends Phaser.Scene {
       [0, 0, 0, 0, 0, 0, 0, -1, 0, 0],
       [0, 0, 0, 0, 0, 0, 0, -1, 0, 0],
     ];
+
     // Add UI elements
     globals.uiElements = this.add.group({ classType: Phaser.GameObjects.Sprite, runChildUpdate: true });
+    globals.uiElements.add(new ImageButton(this, 550, 480, 'enemy', () => this.startRound()), true)
+    this.livesUI = this.add.text(500, 30, `${globals.lives}`, { color: "#FF4433" })
+    this.goldUI = this.add.text(550, 30, `${globals.gold}`, { color: "#FDDA0D" })
 
     // Add enemies
     globals.enemies = this.physics.add.group({ classType: Enemy, runChildUpdate: true });
@@ -113,7 +135,6 @@ export class ScenarioScene extends Phaser.Scene {
 
     // Add towers
     globals.towers = this.add.group({ classType: Tower, runChildUpdate: true });
-
 
     // Add projectiles
     globals.projectiles = this.physics.add.group({ classType: Projectile, runChildUpdate: true });
@@ -135,8 +156,6 @@ export class ScenarioScene extends Phaser.Scene {
     console.log(event)
     const centerX = World.getCenterOfTile(event.x)
     const centerY = World.getCenterOfTile(event.y)
-    console.log(event.x, centerX)
-    console.log('distance  ', Math.abs(event.x - centerX))
     if (this.buildMenuVisible && (Math.abs(event.y - this.buildMenuY) > 54 || Math.abs(event.x - this.buildMenuX) > 54 || Math.abs(event.x - this.buildMenuX) + Math.abs(event.y - this.buildMenuY) > 79)) {
       // Clear previous menu
       this.buildMenu?.clear();
@@ -157,8 +176,6 @@ export class ScenarioScene extends Phaser.Scene {
         globals.uiElements?.add(new ImageButton(this, centerX - 48, centerY, 'green_arrow', () => { this.findAndAddTower(this, 'basic', centerX, centerY, true); this.buildMenu?.clear(); globals.uiElements?.clear(true, true); this.buildMenuVisible = false }), true)
       }
     }
-
-
   }
 
   private canPlaceTower = (i: number, j: number) => {
@@ -171,12 +188,12 @@ export class ScenarioScene extends Phaser.Scene {
     if (this.graphics) {
       this.graphics.lineStyle(1, 0x0000ff, 0.8);
       for (var i = 0; i < 8; i++) {
-        this.graphics.moveTo(0, i * 64);
-        this.graphics.lineTo(640, i * 64);
+        this.graphics.moveTo(0, i * globals.TILE_SIZE);
+        this.graphics.lineTo(globals.MAP_WIDTH, i * globals.TILE_SIZE);
       }
       for (var j = 0; j < 10; j++) {
-        this.graphics.moveTo(j * 64, 0);
-        this.graphics.lineTo(j * 64, 512);
+        this.graphics.moveTo(j * globals.TILE_SIZE, 0);
+        this.graphics.lineTo(j * globals.TILE_SIZE, globals.MAP_HEIGHT);
       }
       this.graphics.strokePath();
     }
@@ -184,7 +201,7 @@ export class ScenarioScene extends Phaser.Scene {
 
   public update = (time: number, delta: number) => {
     // if its time for the next enemy
-    if (!!this.nextEnemy && globals.enemies && time > this.nextEnemy) {
+    if (this.roundStarted && !!this.nextEnemy && globals.enemies && this.roundsDefinition[this.currentRound] && this.roundsDefinition[this.currentRound].basic > 0 && time > this.nextEnemy) {
       var enemy = globals.enemies.get();
       if (enemy) {
         enemy.setActive(true);
@@ -192,9 +209,21 @@ export class ScenarioScene extends Phaser.Scene {
 
         // place the enemy at the start of the path
         enemy.startOnPath(this.path);
+        this.roundsDefinition[this.currentRound].basic -= 1;
 
-        this.nextEnemy = time + 200;
+        this.nextEnemy = time + (1000 / this.roundsDefinition[this.currentRound].spawnRate);
       }
+    }
+
+    if (this.roundsDefinition[this.currentRound].basic == 0 && globals.enemies && globals.enemies.countActive(true) < 1) {
+      this.endRound()
+    }
+
+    if (this.livesUI) {
+      this.livesUI.setText(`${globals.lives}`)
+    }
+    if (this.goldUI) {
+      this.goldUI.setText(`${globals.gold}`)
     }
   };
 }
