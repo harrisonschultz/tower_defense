@@ -1,0 +1,1 @@
+export default ['../assets/tilesets/prairie/grass.png']

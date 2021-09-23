@@ -21,6 +21,7 @@ export class Projectile extends Phaser.GameObjects.Image {
     this.damage = stats.damage;
     this.splashDamage = stats.splashDamage;
     this.splashRange = stats.splashRange;
+    this.setDepth(globals.zIndex.projectile)
   }
 
   fire = (x: number, y: number, angle: number) => {

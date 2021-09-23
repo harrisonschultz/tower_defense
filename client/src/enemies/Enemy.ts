@@ -20,6 +20,7 @@ export class Enemy extends Phaser.GameObjects.Sprite {
     this.follower = { t: 0, vector: new Phaser.Math.Vector2() };
     this.hp = 100
     this.maxHp = 100
+    this.setDepth(globals.zIndex.enemy)
   }
 
   update = (time: number, delta: number) => {

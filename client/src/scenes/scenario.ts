@@ -8,6 +8,7 @@ import { Tower } from "../towers/tower";
 import { Towers } from '../towers/towers'
 import { World } from "../maps/world";
 import { ImageButton } from '../UI/ImageButton'
+import { TileMap } from "../maps/tilemap";
 
 const sceneConfig: Phaser.Types.Scenes.SettingsConfig = {
   key: "main",
@@ -18,6 +19,7 @@ export class ScenarioScene extends Phaser.Scene {
   public buildMenu: Phaser.GameObjects.Graphics | undefined;
   public lives: number;
   public path: Phaser.Curves.Path | undefined;
+  public tileMap: TileMap | undefined;
   private livesUI: Phaser.GameObjects.Text | undefined;
   private goldUI: Phaser.GameObjects.Text | undefined;
   private buildMenuVisible: boolean
@@ -47,6 +49,8 @@ export class ScenarioScene extends Phaser.Scene {
     this.load.image("barrel", "assets/barrel.png");
     this.load.image("bookshelf", "assets/bookshelf.png");
     this.load.image("green_arrow", "assets/green_arrow.png");
+    this.tileMap = new TileMap(this, 'prairie', this.showBuildMenu)
+    this.tileMap.load()
   }
 
   public setListeners() {
@@ -60,10 +64,13 @@ export class ScenarioScene extends Phaser.Scene {
   public findAndAddTower(scene: Phaser.Scene, name: string, x: number, y: number, send?: boolean) {
     const tower = Towers.createTower(scene, name, x, y)
     if (tower) {
-      if (send && tower.cost <= globals.gold) {
-        tower.payForTower()
-      }
-      this.addTowerToWorld(tower, x, y)
+      if (send)
+        if (tower.cost <= globals.gold) {
+          tower.payForTower()
+          this.addTowerToWorld(tower, x, y)
+        } else {
+          this.addTowerToWorld(tower, x, y)
+        }
     }
 
     if (send) {
@@ -96,7 +103,9 @@ export class ScenarioScene extends Phaser.Scene {
     // this graphics element is only for visualization,
     // its not related to our path
     this.graphics = this.add.graphics();
+    this.graphics.setDepth(globals.zIndex.path)
     this.buildMenu = this.add.graphics();
+    this.buildMenu.setDepth(globals.zIndex.ui)
     this.drawGrid();
 
     // the path for our enemies
@@ -111,6 +120,17 @@ export class ScenarioScene extends Phaser.Scene {
     this.path.draw(this.graphics);
 
 
+    this.tileMap && this.tileMap.buildMap([
+      ['grass', 'grass', 'grass', 'grass', 'grass', 'grass', 'grass', 'grass', 'grass', 'grass'],
+      ['grass', 'grass', 'grass', 'grass', 'grass', 'grass', 'grass', 'grass', 'grass', 'grass'],
+      ['grass', 'grass', 'grass', 'grass', 'grass', 'grass', 'grass', 'grass', 'grass', 'grass'],
+      ['grass', 'grass', 'grass', 'grass', 'grass', 'grass', 'grass', 'grass', 'grass', 'grass'],
+      ['grass', 'grass', 'grass', 'grass', 'grass', 'grass', 'grass', 'grass', 'grass', 'grass'],
+      ['grass', 'grass', 'grass', 'grass', 'grass', 'grass', 'grass', 'grass', 'grass', 'grass'],
+      ['grass', 'grass', 'grass', 'grass', 'grass', 'grass', 'grass', 'grass', 'grass', 'grass'],
+      ['grass', 'grass', 'grass', 'grass', 'grass', 'grass', 'grass', 'grass', 'grass', 'grass'],
+    ])
+
     // Set map
     globals.map = [
       [0, -1, 0, 0, 0, 0, 0, 0, 0, 0],
@@ -124,10 +144,16 @@ export class ScenarioScene extends Phaser.Scene {
     ];
 
     // Add UI elements
+    globals.buildMenu = this.add.group({ classType: Phaser.GameObjects.Sprite, runChildUpdate: true });
     globals.uiElements = this.add.group({ classType: Phaser.GameObjects.Sprite, runChildUpdate: true });
-    globals.uiElements.add(new ImageButton(this, 550, 480, 'enemy', () => this.startRound()), true)
+    const roundButton = new ImageButton(this, 550, 480, 'enemy', () => this.startRound())
+    roundButton.setDepth(globals.zIndex.ui)
+    globals.uiElements.add(roundButton, true)
+
     this.livesUI = this.add.text(500, 30, `${globals.lives}`, { color: "#FF4433" })
     this.goldUI = this.add.text(550, 30, `${globals.gold}`, { color: "#FDDA0D" })
+    this.livesUI.setDepth(globals.zIndex.ui)
+    this.goldUI.setDepth(globals.zIndex.ui)
 
     // Add enemies
     globals.enemies = this.physics.add.group({ classType: Enemy, runChildUpdate: true });
@@ -138,9 +164,6 @@ export class ScenarioScene extends Phaser.Scene {
 
     // Add projectiles
     globals.projectiles = this.physics.add.group({ classType: Projectile, runChildUpdate: true });
-
-    // Add user input detection
-    this.input.on("pointerdown", this.showBuildMenu);
 
     // Add projectile collision
     if (globals.enemies && globals.projectiles) {
@@ -153,13 +176,12 @@ export class ScenarioScene extends Phaser.Scene {
   }
 
   public showBuildMenu = (event: any) => {
-    console.log(event)
     const centerX = World.getCenterOfTile(event.x)
     const centerY = World.getCenterOfTile(event.y)
     if (this.buildMenuVisible && (Math.abs(event.y - this.buildMenuY) > 54 || Math.abs(event.x - this.buildMenuX) > 54 || Math.abs(event.x - this.buildMenuX) + Math.abs(event.y - this.buildMenuY) > 79)) {
       // Clear previous menu
       this.buildMenu?.clear();
-      globals.uiElements?.clear(true, true)
+      globals.buildMenu?.clear(true, true)
       this.buildMenuVisible = false
     } else if (!this.buildMenuVisible) {
       if (this.canPlaceTower(World.getMapCoordinate(event.x), World.getMapCoordinate(event.y))) {
@@ -172,8 +194,12 @@ export class ScenarioScene extends Phaser.Scene {
         this.buildMenuX = centerX
         this.buildMenuY = centerY
 
-        globals.uiElements?.add(new ImageButton(this, centerX + 48, centerY, 'bomb', () => { this.findAndAddTower(this, 'bomb', centerX, centerY, true); this.buildMenu?.clear(); globals.uiElements?.clear(true, true); this.buildMenuVisible = false }), true)
-        globals.uiElements?.add(new ImageButton(this, centerX - 48, centerY, 'green_arrow', () => { this.findAndAddTower(this, 'basic', centerX, centerY, true); this.buildMenu?.clear(); globals.uiElements?.clear(true, true); this.buildMenuVisible = false }), true)
+        const bombTowerButton = new ImageButton(this, centerX + 48, centerY, 'bomb', () => { this.findAndAddTower(this, 'bomb', centerX, centerY, true); this.buildMenu?.clear(); globals.buildMenu?.clear(true, true); this.buildMenuVisible = false })
+        const arrowTowerButton = new ImageButton(this, centerX - 48, centerY, 'green_arrow', () => { this.findAndAddTower(this, 'basic', centerX, centerY, true); this.buildMenu?.clear(); globals.buildMenu?.clear(true, true); this.buildMenuVisible = false })
+        bombTowerButton.setDepth(globals.zIndex.ui)
+        arrowTowerButton.setDepth(globals.zIndex.ui)
+        globals.buildMenu?.add(bombTowerButton, true)
+        globals.buildMenu?.add(arrowTowerButton, true)
       }
     }
   }
@@ -186,12 +212,12 @@ export class ScenarioScene extends Phaser.Scene {
 
   public drawGrid() {
     if (this.graphics) {
-      this.graphics.lineStyle(1, 0x0000ff, 0.8);
-      for (var i = 0; i < 8; i++) {
+      this.graphics.lineStyle(0.7, 0xffffff, 0.8);
+      for (var i = 1; i < globals.MAP_HEIGHT / globals.TILE_SIZE; i++) {
         this.graphics.moveTo(0, i * globals.TILE_SIZE);
         this.graphics.lineTo(globals.MAP_WIDTH, i * globals.TILE_SIZE);
       }
-      for (var j = 0; j < 10; j++) {
+      for (var j = 1; j < globals.MAP_WIDTH / globals.TILE_SIZE; j++) {
         this.graphics.moveTo(j * globals.TILE_SIZE, 0);
         this.graphics.lineTo(j * globals.TILE_SIZE, globals.MAP_HEIGHT);
       }

@@ -29,6 +29,7 @@ export class Tower extends Phaser.GameObjects.Sprite {
     this.setInteractive()
     this.on('pointerover', () => this.rangeDisplay.setVisible(true))
     this.on('pointerout', () => this.rangeDisplay.setVisible(false))
+    this.setDepth(globals.zIndex.tower)
   }
 
   initialize = (scene: Phaser.Scene) => {

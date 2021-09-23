@@ -7,8 +7,12 @@ class Globals {
   enemies: Phaser.GameObjects.Group | undefined;
   towers: Phaser.GameObjects.Group | undefined;
   projectiles: Phaser.GameObjects.Group | undefined;
+  buildMenu: Phaser.GameObjects.Group | undefined;
+  tileMap: Phaser.GameObjects.Group | undefined;
   map: Array<Array<number>> | undefined;
   socket: Socket<DefaultEventsMap, DefaultEventsMap> | undefined
+  zIndex: { map: number, path: number, enemy: number, tower: number, ui: number, projectile: number }
+
   game: Phaser.Game | undefined
   gold: number
   lives: number
@@ -20,8 +24,9 @@ class Globals {
     this.gold = 100;
     this.lives = 10;
     this.TILE_SIZE = 64
-    this.MAP_HEIGHT = 668;
-    this.MAP_WIDTH = 924;
+    this.MAP_HEIGHT = 640;
+    this.MAP_WIDTH = 896;
+    this.zIndex = { map: 1, path: 2, tower: 3, enemy: 5, ui: 6, projectile: 4 }
   }
 }
 
